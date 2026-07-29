@@ -11,7 +11,18 @@ async function api(method,path,body){
   if(!r.ok)throw Object.assign(new Error(data.error||r.statusText),{data,status:r.status});
   return data;
 }
-async function loadUser(){try{const d=await api('GET','/api/auth/me');currentUser=d.user;return d.user;}catch{return null;}}
+async function loadUser(){
+  try{
+    const d=await api('GET','/api/auth/me');
+    if(!d || !d.user) throw new Error('Invalid user');
+    currentUser=d.user;
+    return d.user;
+  }catch{
+    localStorage.removeItem('hf_token');
+    document.cookie='hf_token=;expires=Thu,01 Jan 1970 00:00:00 GMT;path=/';
+    return null;
+  }
+}
 function requireLogin(r='/login.html'){if(!getToken()){location.href=r;return false;}return true;}
 function logout(){
   fetch('/api/auth/logout',{method:'POST',headers:authHeaders()}).finally(()=>{
