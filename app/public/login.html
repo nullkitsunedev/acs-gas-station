@@ -1,0 +1,37 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACS Gas Station — Sign In</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<div class="login-wrap">
+  <div class="login-bg"></div>
+  <div class="login-overlay"></div>
+  <div class="login-box">
+    <div class="login-brand">
+      <div class="logo">⛽</div>
+      <h1>ACS Gas Station</h1>
+      <p>Customer & Staff Portal — Arena Web Security Energy</p>
+    </div>
+    <div id="err" class="alert alert-red" style="display:none"></div>
+    <div class="form-group"><label>Email Address</label>
+      <input class="form-control" id="email" type="email" placeholder="customer@example.com" autocomplete="off">
+    </div>
+    <div class="form-group"><label>Password</label>
+      <input class="form-control" id="pass" type="password" placeholder="••••••••">
+    </div>
+    <button class="btn btn-green btn-full" onclick="doLogin()" style="margin-bottom:12px">Sign In</button>
+    <div style="text-align:center"><a href="/register.html" style="color:var(--green);font-size:.83rem">New customer? Register for loyalty card</a></div>
+    <div style="margin-top:20px;text-align:center;color:var(--grey2);font-size:.72rem">ACS Gas Station v1.0.0 · Property of Arena Web Security</div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+async function doLogin(){
+  $('err').style.display='none';
+  try{
+    const d=await api('POST','/api/auth/login',{email:$('email').value.trim(),password:$('pass').value});
+    localStorage.setItem('hf_token',d.token);
+    const dest={admin:'/admin.html',manager:'/manager.html',director:'/admin.html'}[d.user.role]||'/dashboard.html';
+    location.href=dest;
+  }catch(e){$('err').textContent=e.message;$('err').style.display='block';}
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+if(getToken())location.href='/dashboard.html';
+</script></body></html>

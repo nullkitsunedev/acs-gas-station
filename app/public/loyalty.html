@@ -1,0 +1,71 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACS Gas Station — Loyalty</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav></nav>
+<div class="page">
+  <div class="page-header"><h1>⭐ <span>Loyalty</span> Programme</h1><p>Earn points on every purchase and redeem for fuel discounts</p></div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><h3>🎯 My Loyalty Points</h3></div>
+      <div id="loyaltyInfo"><div style="color:var(--grey)">Loading...</div></div>
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border2)">
+        <div class="form-group"><label>Points to Redeem</label>
+          <input class="form-control" id="redeemPoints" type="number" placeholder="Min 100 points" min="100" step="100">
+        </div>
+        <div id="redeemMsg" class="alert" style="display:none"></div>
+        <button class="btn btn-green" onclick="redeemPoints()">Redeem Points</button>
+        <button class="btn btn-black" style="margin-left:8px" onclick="raceRedeem()">Send 10 Parallel Requests</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>📋 Redemption History</h3></div>
+      <div id="redemptionHistory"><div style="color:var(--grey)">Loading...</div></div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+if(!requireLogin()){}
+renderNav();
+async function init(){
+  const user=await loadUser();if(!user)return;
+  const pct=Math.min((user.loyalty_points/5000)*100,100);
+  $('loyaltyInfo').innerHTML=`
+    <div style="text-align:center;padding:16px 0">
+      <div style="font-size:3rem;font-weight:800;color:var(--green)">${user.loyalty_points.toLocaleString()}</div>
+      <div style="color:var(--grey);font-size:.84rem;margin-top:4px">Available Points</div>
+    </div>
+    <div class="loyalty-bar"><div class="loyalty-fill" style="width:${pct}%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:.76rem;color:var(--grey)"><span>0</span><span>5,000 pts = GHS 25.00</span></div>
+    <div style="margin-top:14px;padding:12px;background:var(--bg);border-radius:8px;font-size:.82rem">
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--grey)">Redemption Rate</span><span>100 pts = GHS 0.50</span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px"><span style="color:var(--grey)">Current Value</span><span style="color:var(--green);font-weight:700">GHS ${(user.loyalty_points*0.005).toFixed(2)}</span></div>
+    </div>`;
+  const h=await api('GET','/api/loyalty/history').catch(()=>({redemptions:[]}));
+  $('redemptionHistory').innerHTML=h.redemptions.length?h.redemptions.map(r=>`
+    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border2)">
+      <div><div style="font-weight:600;font-size:.88rem">−${r.points_used} points</div><div style="color:var(--grey);font-size:.76rem">${fmtDateTime(r.redeemed_at)}</div></div>
+      <div style="font-weight:700;color:var(--green)">GHS ${parseFloat(r.discount_ghs).toFixed(2)}</div>
+    </div>`).join(''):'<div style="color:var(--grey);padding:10px 0">No redemptions yet</div>';
+}
+async function redeemPoints(){
+  const msg=$('redeemMsg');msg.style.display='none';
+  const pts=parseInt($('redeemPoints').value)||100;
+  try{
+    const d=await api('POST','/api/loyalty/redeem',{points:pts});
+    msg.className='alert alert-green';
+    msg.innerHTML=`Redeemed ${pts} points = <strong>GHS ${d.discount_ghs.toFixed(2)}</strong> discount. Remaining: ${d.remaining_points}`;
+    msg.style.display='block';init();
+  }catch(e){msg.className='alert alert-red';msg.textContent=e.message;msg.style.display='block';}
+}
+async function raceRedeem(){
+  const msg=$('redeemMsg');msg.style.display='none';
+  const pts=parseInt($('redeemPoints').value)||100;
+  const results=await Promise.allSettled(Array(10).fill(null).map(()=>api('POST','/api/loyalty/redeem',{points:pts})));
+  const successes=results.filter(r=>r.status==='fulfilled');
+  const flag=successes.find(r=>r.value?.hive_flag)?.value?.hive_flag;
+  msg.className=successes.length>1?'alert alert-green':'alert alert-orange';
+  msg.innerHTML=`${successes.length}/10 requests succeeded.${successes.length>1?' Race condition exploited!':''}`;
+  msg.style.display='block';init();
+}
+init();
+</script></body></html>

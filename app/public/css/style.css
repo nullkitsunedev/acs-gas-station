@@ -1,0 +1,198 @@
+/* ACS Gas Station — White / Green / Black */
+:root {
+  --bg:        #F5F8F5;
+  --bg2:       #FFFFFF;
+  --green:     #0A6E24;
+  --green2:    #158A30;
+  --green3:    #CCF0D8;
+  --green4:    #E8F8ED;
+  --green-dim: rgba(10,110,36,0.07);
+  --green-bd:  rgba(10,110,36,0.2);
+  --black:     #080F08;
+  --black2:    #111A11;
+  --dark:      #0D150D;
+  --grey:      #3D5240;
+  --grey2:     #7A917D;
+  --border:    #D0E5D4;
+  --border2:   #E6F2E8;
+  --white:     #FFFFFF;
+  --red:       #B91C1C;
+  --orange:    #C2410C;
+  --yellow:    #854D0E;
+  --shadow:    0 1px 8px rgba(10,110,36,0.09);
+  --shadow2:   0 6px 30px rgba(10,110,36,0.15);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--dark);font-family:'Segoe UI',Arial,sans-serif;font-size:14px;min-height:100vh;}
+
+/* ── Nav ─────────────────────────────────────────── */
+nav{
+  background:var(--black);
+  padding:0 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:62px;
+  box-shadow:0 2px 16px rgba(0,0,0,0.6);
+  position:sticky;top:0;z-index:200;
+  border-bottom:3px solid var(--green);
+}
+.nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;}
+.nav-icon{width:38px;height:38px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.nav-brand-text .name{font-size:1.05rem;font-weight:800;color:#fff;display:block;letter-spacing:.02em;}
+.nav-brand-text .sub{font-size:.63rem;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.08em;display:block;}
+.nav-links{display:flex;gap:2px;}
+.nav-links a{color:rgba(255,255,255,.5);text-decoration:none;padding:7px 13px;border-radius:6px;font-size:.84rem;transition:.18s;}
+.nav-links a:hover,.nav-links a.active{background:rgba(10,110,36,.5);color:#fff;}
+.nav-links a.admin-link{color:rgba(255,210,80,.8);}
+.nav-user{display:flex;align-items:center;gap:10px;}
+.role-badge{padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.role-customer {background:rgba(255,255,255,.1);color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.18);}
+.role-attendant{background:rgba(10,110,36,.4);color:#6EE890;border:1px solid rgba(110,232,144,.3);}
+.role-manager  {background:rgba(194,65,12,.35);color:#FCA5A5;border:1px solid rgba(252,165,165,.3);}
+.role-director {background:rgba(133,77,14,.4);color:#FCD34D;border:1px solid rgba(252,211,77,.3);}
+.role-admin    {background:rgba(185,28,28,.4);color:#FCA5A5;border:1px solid rgba(252,165,165,.3);}
+
+/* ── Layout ──────────────────────────────────────── */
+.page{max-width:1200px;margin:0 auto;padding:30px 24px;}
+.page-header{margin-bottom:26px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.page-header h1{font-size:1.6rem;color:var(--dark);display:flex;align-items:center;gap:10px;}
+.page-header h1 span{color:var(--green);}
+.page-header p{color:var(--grey);margin-top:5px;font-size:.86rem;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+
+/* ── Cards ───────────────────────────────────────── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:22px;box-shadow:var(--shadow);}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border2);}
+.card-header h3{font-size:.93rem;font-weight:700;color:var(--dark);}
+
+/* ── Stat cards ──────────────────────────────────── */
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;border-left:4px solid var(--green);box-shadow:var(--shadow);}
+.stat-card.black{border-left-color:var(--black2);}
+.stat-card.orange{border-left-color:var(--orange);}
+.stat-card.red  {border-left-color:var(--red);}
+.stat-card .label{color:var(--grey);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;}
+.stat-card .value{font-size:1.8rem;font-weight:700;color:var(--dark);}
+.stat-card .sub{color:var(--grey);font-size:.74rem;margin-top:3px;}
+
+/* ── Tables ──────────────────────────────────────── */
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:.83rem;}
+th{background:var(--bg);color:var(--green);padding:10px 14px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;border-bottom:2px solid var(--border);}
+td{padding:10px 14px;border-bottom:1px solid var(--border2);color:var(--dark);}
+tr:hover td{background:var(--green-dim);}
+tr:last-child td{border-bottom:none;}
+
+/* ── Buttons ─────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;border:none;font-size:.83rem;font-weight:600;cursor:pointer;transition:.18s;text-decoration:none;}
+.btn-green {background:var(--green);color:#fff;}
+.btn-green:hover{background:var(--green2);}
+.btn-black {background:var(--black);color:#fff;}
+.btn-black:hover{background:var(--black2);}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--dark);}
+.btn-outline:hover{border-color:var(--green);color:var(--green);}
+.btn-red   {background:var(--red);color:#fff;}
+.btn-sm    {padding:5px 12px;font-size:.75rem;}
+.btn-full  {width:100%;justify-content:center;}
+
+/* ── Forms ───────────────────────────────────────── */
+.form-group{margin-bottom:15px;}
+.form-group label{display:block;margin-bottom:5px;color:var(--dark);font-size:.77rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+.form-control{width:100%;padding:10px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--dark);font-size:.88rem;transition:.18s;}
+.form-control:focus{outline:none;border-color:var(--green);background:var(--white);box-shadow:0 0 0 3px var(--green-dim);}
+.form-control::placeholder{color:var(--grey2);}
+textarea.form-control{resize:vertical;font-family:monospace;}
+
+/* ── Alerts ──────────────────────────────────────── */
+.alert{padding:11px 15px;border-radius:8px;margin-bottom:13px;font-size:.85rem;}
+.alert-green {background:var(--green-dim);border:1px solid var(--green-bd);color:var(--green);}
+.alert-red   {background:rgba(185,28,28,.05);border:1px solid rgba(185,28,28,.2);color:var(--red);}
+.alert-orange{background:rgba(194,65,12,.05);border:1px solid rgba(194,65,12,.2);color:var(--orange);}
+
+/* ── Badges ──────────────────────────────────────── */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.badge-green {background:var(--green-dim);color:var(--green);}
+.badge-orange{background:rgba(194,65,12,.07);color:var(--orange);}
+.badge-red   {background:rgba(185,28,28,.07);color:var(--red);}
+.badge-grey  {background:rgba(61,82,64,.08);color:var(--grey);}
+.badge-black {background:rgba(8,15,8,.08);color:var(--black2);}
+
+/* ── Login — gas station background ─────────────────*/
+.login-wrap{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.login-bg{
+  position:absolute;inset:0;
+  background:url('/images/station.png') center/cover no-repeat;
+  filter:brightness(.35) saturate(.8);
+  z-index:0;
+}
+.login-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(8,15,8,.7) 0%,rgba(10,110,36,.25) 100%);
+  z-index:1;
+}
+.login-box{
+  position:relative;z-index:2;
+  background:rgba(255,255,255,.97);
+  border:1px solid var(--border);
+  border-radius:16px;padding:44px 40px;
+  width:100%;max-width:420px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+.login-brand{text-align:center;margin-bottom:28px;}
+.login-brand .logo{
+  width:64px;height:64px;background:var(--green);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:2rem;margin:0 auto 14px;
+}
+.login-brand h1{font-size:1.4rem;font-weight:800;color:var(--dark);}
+.login-brand p{color:var(--grey);font-size:.82rem;margin-top:4px;}
+
+/* ── Pump card ───────────────────────────────────── */
+.pump-card{
+  background:var(--bg2);border:2px solid var(--border);border-radius:12px;padding:18px;
+  text-align:center;transition:.2s;box-shadow:var(--shadow);
+}
+.pump-card:hover{border-color:var(--green);box-shadow:var(--shadow2);}
+.pump-number{font-size:2.5rem;font-weight:800;color:var(--green);line-height:1;}
+.pump-label{color:var(--grey);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;margin-top:4px;}
+.pump-status{margin-top:10px;}
+
+/* ── Fuel price board ────────────────────────────── */
+.price-board{
+  background:var(--black);border-radius:12px;padding:22px;
+}
+.price-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08);}
+.price-row:last-child{border-bottom:none;}
+.fuel-name{color:#fff;font-weight:600;font-size:.95rem;}
+.fuel-price{font-size:1.5rem;font-weight:800;color:var(--green);font-family:monospace;}
+.fuel-unit{color:rgba(255,255,255,.4);font-size:.72rem;}
+
+/* ── Transaction row ─────────────────────────────── */
+.txn-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border2);}
+.txn-row:last-child{border-bottom:none;}
+.txn-fuel{font-weight:600;font-size:.88rem;}
+.txn-meta{color:var(--grey);font-size:.76rem;}
+.txn-amount{font-weight:700;color:var(--green);font-size:.95rem;font-family:monospace;}
+
+/* ── Loyalty meter ───────────────────────────────── */
+.loyalty-bar{background:var(--bg);border-radius:4px;height:8px;overflow:hidden;margin:8px 0;border:1px solid var(--border);}
+.loyalty-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green2));border-radius:4px;transition:.6s;}
+
+/* ── Tab bar ─────────────────────────────────────── */
+.tab-bar{display:flex;gap:4px;margin-bottom:18px;border-bottom:2px solid var(--border);}
+.tab-btn{padding:8px 16px;border:none;background:none;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--grey);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.18s;}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green);}
+
+/* ── Flag box ────────────────────────────────────── */
+.flag-box{background:var(--green-dim);border:1.5px solid var(--green-bd);border-radius:8px;padding:13px 17px;margin-top:11px;font-family:monospace;font-size:.85rem;color:var(--green);word-break:break-all;}
+.flag-box strong{display:block;margin-bottom:4px;color:var(--dark);font-family:'Segoe UI',Arial,sans-serif;font-size:.8rem;}
+
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--green);}
+@media(max-width:768px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}.nav-links{display:none;}nav{padding:0 14px;}}

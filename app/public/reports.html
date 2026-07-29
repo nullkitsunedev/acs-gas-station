@@ -1,0 +1,83 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACS Gas Station — Reports</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav></nav>
+<div class="page">
+  <div class="page-header"><h1>📊 <span>Reports</span></h1><p>Generate station reports and analytics</p></div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><h3>📋 Report Generator</h3></div>
+      <div class="form-group"><label>Report Template</label>
+        <select class="form-control" id="templateSel" onchange="syncTemplate()">
+          <option value="sales">Monthly Sales Report</option>
+          <option value="inventory">Fuel Inventory Report</option>
+          <option value="payroll">Staff Payroll Summary</option>
+          <option value="custom">Custom Path...</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Template Path</label>
+        <input class="form-control" id="templatePath" placeholder="sales or /etc/acs-gas-station/config.txt">
+      </div>
+      <button class="btn btn-green" onclick="generateReport()">Generate Report</button>
+      <div id="reportResult" style="margin-top:16px"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>🌐 External Price Feed</h3></div>
+      <p style="color:var(--grey);font-size:.84rem;margin-bottom:14px">Connect to an external fuel pricing API to sync current market rates.</p>
+      <div class="form-group"><label>Price Feed URL</label>
+        <input class="form-control" id="feedUrl" placeholder="https://fuelprices.api.gh/v1/current">
+      </div>
+      <button class="btn btn-black" onclick="fetchPriceFeed()">Fetch Price Feed</button>
+      <div id="feedResult" style="margin-top:14px"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <div class="card-header"><h3>🧾 Upload Receipt / Document</h3></div>
+    <p style="color:var(--grey);font-size:.84rem;margin-bottom:14px">Upload fuel receipts, warranty documents, or maintenance records. Accepted: JPEG, PNG, PDF.</p>
+    <div style="display:flex;gap:14px;align-items:flex-end">
+      <div style="flex:1"><div class="form-group"><label>File</label><input class="form-control" id="receiptFile" type="file"></div></div>
+      <div><button class="btn btn-green" onclick="uploadReceipt()">Upload</button></div>
+    </div>
+    <div id="uploadResult" style="margin-top:12px"></div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+if(!requireLogin()){}
+renderNav();
+function syncTemplate(){const v=$('templateSel').value;if(v!=='custom')$('templatePath').value=v;}
+syncTemplate();
+async function generateReport(){
+  const template=$('templatePath').value||$('templateSel').value;
+  const box=$('reportResult');
+  box.innerHTML='<div style="color:var(--grey)">Generating...</div>';
+  try{
+    const d=await api('GET',`/api/reports/generate?template=${encodeURIComponent(template)}`);
+    const hasFlag=d.hive_flag;
+    box.innerHTML=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px">
+      <div style="font-weight:700;margin-bottom:10px;color:var(--green)">📄 ${template}</div>
+      <pre style="font-size:.76rem;overflow:auto;max-height:280px;white-space:pre-wrap;color:var(--dark)">${d.content||''}</pre>
+    </div>`;
+  }catch(e){box.innerHTML=`<div class="alert alert-red">${e.message}</div>`;}
+}
+async function fetchPriceFeed(){
+  const url=$('feedUrl').value.trim();if(!url)return;
+  const box=$('feedResult');box.innerHTML='<div style="color:var(--grey)">Fetching...</div>';
+  try{
+    const d=await api('POST','/api/fuel/external-price',{url});
+    box.innerHTML=`<div class="alert alert-green">HTTP ${d.status} — Response received</div>
+      <pre style="background:var(--bg);padding:12px;border-radius:8px;font-size:.76rem;overflow:auto;max-height:220px;border:1px solid var(--border);margin-top:8px">${d.data||''}</pre>
+      `;
+  }catch(e){box.innerHTML=`<div class="alert alert-red">${e.message}</div>`;}
+}
+async function uploadReceipt(){
+  const file=$('receiptFile').files[0];if(!file)return;
+  const fd=new FormData();fd.append('receipt',file);
+  const box=$('uploadResult');box.innerHTML='<div style="color:var(--grey)">Uploading...</div>';
+  try{
+    const r=await fetch('/api/upload/receipt',{method:'POST',headers:{Authorization:'Bearer '+getToken()},body:fd});
+    const d=await r.json();if(!r.ok)throw new Error(d.error);
+    box.innerHTML=`<div class="alert alert-green">Uploaded: <a href="${d.url}" target="_blank" style="color:var(--green)">${d.filename}</a></div>
+      <div style="font-size:.75rem;color:var(--grey);margin-top:4px">URL: <code>${d.url}</code></div>`;
+  }catch(e){box.innerHTML=`<div class="alert alert-red">${e.message}</div>`;}
+}
+</script></body></html>

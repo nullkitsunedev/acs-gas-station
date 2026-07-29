@@ -1,0 +1,82 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACS Gas Station — Dashboard</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav></nav>
+<div class="page">
+  <div class="page-header"><h1>⛽ <span>Dashboard</span></h1><p>Welcome to ACS Gas Station — Arena Web Security Energy</p></div>
+  <div class="grid-4" id="stats" style="margin-bottom:22px"></div>
+  <div class="grid-2" style="margin-bottom:20px">
+    <div>
+      <div style="background:var(--black);border-radius:12px;padding:22px;margin-bottom:18px">
+        <div style="color:rgba(255,255,255,.5);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">⛽ Live Fuel Prices — GHS per Litre</div>
+        <div id="priceboard"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>🔍 Transaction Lookup</h3></div>
+        <div style="display:flex;gap:8px">
+          <input class="form-control" id="txnId" type="number" placeholder="Enter transaction ID" style="flex:1">
+          <button class="btn btn-green btn-sm" onclick="lookupTxn()">Look Up</button>
+        </div>
+        <div id="txnResult" style="margin-top:12px"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>🕐 Recent Transactions</h3><a href="/transactions.html" class="btn btn-outline btn-sm">All</a></div>
+      <div id="recentTxns"><div style="color:var(--grey)">Loading...</div></div>
+    </div>
+  </div>
+  <div class="grid-3">
+    ${[1,2,3,4,5,6].map(n=>`
+    <div class="pump-card">
+      <div class="pump-number">0${n}</div>
+      <div class="pump-label">Pump ${n}</div>
+      <div class="pump-status"><span class="badge ${n<=3?'badge-green':'badge-grey'}">${n<=3?'Available':'Busy'}</span></div>
+    </div>`).join('')}
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+if(!requireLogin()){}
+renderNav();
+async function init(){
+  const user=await loadUser();if(!user){location.href='/login.html';return;}
+  const[fd,td]=await Promise.all([
+    api('GET','/api/fuel').catch(()=>({fuels:[]})),
+    api('GET','/api/transactions/my').catch(()=>({transactions:[]})),
+  ]);
+  $('stats').innerHTML=`
+    <div class="stat-card"><div class="label">Customer ID</div><div class="value" style="font-size:1rem">${user.customer_id}</div><div class="sub">${user.role}</div></div>
+    <div class="stat-card black"><div class="label">Loyalty Points</div><div class="value">${user.loyalty_points.toLocaleString()}</div><div class="sub">Redeemable points</div></div>
+    <div class="stat-card orange"><div class="label">Transactions</div><div class="value">${td.transactions.length}</div><div class="sub">Total purchases</div></div>
+    <div class="stat-card"><div class="label">Vehicle</div><div class="value" style="font-size:1rem">${user.vehicle_plate||'—'}</div><div class="sub">Registered plate</div></div>`;
+  $('priceboard').innerHTML=fd.fuels.map(f=>`
+    <div class="price-row">
+      <span class="fuel-name">${f.fuel_type}</span>
+      <div><span class="fuel-price">${parseFloat(f.price_per_litre).toFixed(2)}</span><span class="fuel-unit"> GHS/L</span></div>
+    </div>`).join('');
+  $('recentTxns').innerHTML=td.transactions.slice(0,5).map(t=>`
+    <div class="txn-row">
+      <div><div class="txn-fuel">${t.fuel_type}</div><div class="txn-meta">${t.litres}L · Pump ${t.pump_number} · ${fmtDate(t.created_at)}</div></div>
+      <div class="txn-amount">${fmtCurrency(t.total)}</div>
+    </div>`).join('')||'<div style="color:var(--grey);padding:10px 0">No transactions yet</div>';
+}
+async function lookupTxn(){
+  const id=$('txnId').value;if(!id)return;const box=$('txnResult');
+  try{
+    const d=await api('GET',`/api/transactions/${id}`);const t=d.transaction;
+    box.innerHTML=`<div class="card" style="border-color:var(--green-bd);margin-top:0">
+      <table style="font-size:.83rem"><tbody>
+        <tr><td style="color:var(--grey);width:130px;padding:5px 0">Customer</td><td><strong>${t.customer_name}</strong></td></tr>
+        <tr><td style="color:var(--grey);padding:5px 0">Email</td><td>${t.customer_email}</td></tr>
+        <tr><td style="color:var(--grey);padding:5px 0">Card Number</td><td style="font-family:monospace;color:var(--red)">${t.card_number}</td></tr>
+        <tr><td style="color:var(--grey);padding:5px 0">Vehicle</td><td style="font-family:monospace">${t.vehicle_plate}</td></tr>
+        <tr><td style="color:var(--grey);padding:5px 0">Fuel</td><td>${t.fuel_type} · ${t.litres}L</td></tr>
+        <tr><td style="color:var(--grey);padding:5px 0">Price/L</td><td>GHS ${t.price_per_litre}</td></tr>
+        <tr><td style="color:var(--grey);padding:5px 0">Total</td><td style="font-weight:700;color:var(--green)">${fmtCurrency(t.total)}</td></tr>
+        <tr><td style="color:var(--grey);padding:5px 0">Pump</td><td>${t.pump_number}</td></tr>
+      </tbody></table>
+      
+    </div>`;
+  }catch(e){box.innerHTML=`<div class="alert alert-red">${e.message}</div>`;}
+}
+init();
+</script></body></html>

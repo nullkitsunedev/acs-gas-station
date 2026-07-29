@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACS Gas Station — Register</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<div class="login-wrap">
+  <div class="login-bg"></div>
+  <div class="login-overlay"></div>
+  <div class="login-box" style="max-width:460px">
+    <div class="login-brand">
+      <div class="logo">⛽</div>
+      <h1>Join ACS Gas Station</h1>
+      <p>Register for your loyalty card and start earning points</p>
+    </div>
+    <div id="msg" class="alert" style="display:none"></div>
+    <div class="grid-2">
+      <div class="form-group"><label>Full Name</label><input class="form-control" id="name" placeholder="Kwame Asante"></div>
+      <div class="form-group"><label>Email</label><input class="form-control" id="email" type="email" placeholder="kwame@gmail.com"></div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group"><label>Password</label><input class="form-control" id="pass" type="password" placeholder="••••••••"></div>
+      <div class="form-group"><label>Phone</label><input class="form-control" id="phone" placeholder="+233200000000"></div>
+    </div>
+    <div class="form-group"><label>Vehicle Plate</label><input class="form-control" id="plate" placeholder="GR-1234-21"></div>
+    <button class="btn btn-green btn-full" onclick="doReg()">Register & Get Loyalty Card</button>
+    <div style="text-align:center;margin-top:12px"><a href="/login.html" style="color:var(--grey);font-size:.83rem">Already registered? Sign in</a></div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+async function doReg(){
+  const msg=$('msg');msg.style.display='none';
+  try{
+    const d=await api('POST','/api/auth/register',{name:$('name').value.trim(),email:$('email').value.trim(),password:$('pass').value,phone:$('phone').value,vehicle_plate:$('plate').value});
+    msg.className='alert alert-green';
+    msg.innerHTML=`Welcome! Your customer ID: <strong>${d.customer_id}</strong>`;
+    msg.style.display='block';
+    if(!d.hive_flag)setTimeout(()=>location.href='/login.html',1800);
+  }catch(e){msg.className='alert alert-red';msg.textContent=e.message;msg.style.display='block';}
+}
+</script></body></html>

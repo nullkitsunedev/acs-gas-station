@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACS Gas Station — Transactions</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav></nav>
+<div class="page">
+  <div class="page-header"><h1>💳 <span>Transactions</span></h1><p>Your fuel purchase history</p></div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><h3>⛽ New Fuel Purchase</h3></div>
+      <div class="form-group"><label>Fuel Type</label>
+        <select class="form-control" id="fuelType" onchange="updatePrice()"><option>Loading...</option></select>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label>Litres</label><input class="form-control" id="litres" type="number" placeholder="0.00" step="0.1" oninput="calcTotal()"></div>
+        <div class="form-group"><label>Pump Number</label>
+          <select class="form-control" id="pump"><option value="1">Pump 1</option><option value="2">Pump 2</option><option value="3">Pump 3</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label>Price per Litre (GHS)</label><input class="form-control" id="pricePerLitre" type="number" step="0.01" placeholder="Auto-filled"></div>
+      <div class="form-group"><label>Payment Method</label>
+        <select class="form-control" id="payMethod"><option value="card">Card</option><option value="cash">Cash</option><option value="mobile">Mobile Money</option></select>
+      </div>
+      <div style="padding:12px;background:var(--bg);border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between">
+        <span style="color:var(--grey)">Estimated Total</span>
+        <span id="totalEst" style="font-weight:700;color:var(--green);font-family:monospace">GHS 0.00</span>
+      </div>
+      <div id="txnMsg" class="alert" style="display:none"></div>
+      <button class="btn btn-green btn-full" onclick="newTxn()">Purchase Fuel</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>📋 Transaction History</h3></div>
+      <div id="txnList"><div style="color:var(--grey)">Loading...</div></div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+if(!requireLogin()){}
+renderNav();
+let fuels=[];
+async function init(){
+  const[fd,td]=await Promise.all([api('GET','/api/fuel'),api('GET','/api/transactions/my')]);
+  fuels=fd.fuels;
+  $('fuelType').innerHTML=fuels.map(f=>`<option value="${f.fuel_type}" data-price="${f.price_per_litre}">${f.fuel_type} — GHS${f.price_per_litre}/L</option>`).join('');
+  updatePrice();
+  $('txnList').innerHTML=td.transactions.length?td.transactions.map(t=>`
+    <div class="txn-row">
+      <div><div class="txn-fuel">${t.fuel_type} · ${t.litres}L</div><div class="txn-meta">Pump ${t.pump_number} · ${fmtDateTime(t.created_at)} · +${t.loyalty_earned} pts</div></div>
+      <div style="text-align:right"><div class="txn-amount">${fmtCurrency(t.total)}</div>${statusBadge(t.payment_method)}</div>
+    </div>`).join(''):'<div style="color:var(--grey);padding:10px 0">No transactions yet</div>';
+}
+function updatePrice(){const opt=$('fuelType').selectedOptions[0];if(opt){$('pricePerLitre').value=opt.dataset.price;calcTotal();}}
+function calcTotal(){const l=parseFloat($('litres').value)||0;const p=parseFloat($('pricePerLitre').value)||0;$('totalEst').textContent='GHS '+(l*p).toFixed(2);}
+async function newTxn(){
+  const msg=$('txnMsg');msg.style.display='none';
+  try{
+    const d=await api('POST','/api/transactions',{pump_number:$('pump').value,fuel_type:$('fuelType').value,litres:parseFloat($('litres').value),price_per_litre:parseFloat($('pricePerLitre').value),payment_method:$('payMethod').value});
+    msg.className='alert alert-green';
+    msg.innerHTML=`Purchase complete! Total: <strong>${fmtCurrency(d.total)}</strong> · Loyalty earned: ${d.loyalty_earned} pts`;
+    msg.style.display='block';init();
+  }catch(e){msg.className='alert alert-red';msg.textContent=e.message;msg.style.display='block';}
+}
+init();
+</script></body></html>

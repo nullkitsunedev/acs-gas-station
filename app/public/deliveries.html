@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACS Gas Station — Deliveries</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav></nav>
+<div class="page">
+  <div class="page-header"><h1>🚛 <span>Deliveries</span></h1><p>Fuel delivery scheduling and manifest management</p></div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><h3>📄 Upload Delivery Manifest (XML)</h3></div>
+      <p style="color:var(--grey);font-size:.84rem;margin-bottom:14px">Upload your XML delivery manifest. The system will parse and process the delivery details.</p>
+      <div class="form-group"><label>XML Manifest</label>
+        <textarea class="form-control" id="xmlManifest" rows="10" placeholder='<?xml version="1.0"?>&#10;<manifest>&#10;  <supplier>Gulf Oil Ltd</supplier>&#10;  <fuel>Petrol 91</fuel>&#10;  <quantity>30000</quantity>&#10;  <date>2025-09-01</date>&#10;</manifest>'></textarea>
+      </div>
+      <div id="delivMsg" class="alert" style="display:none"></div>
+      <button class="btn btn-green" onclick="uploadManifest()">Submit Manifest</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>📋 Scheduled Deliveries</h3></div>
+      <div id="delivList"><div style="color:var(--grey)">Loading...</div></div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+if(!requireLogin()){}
+renderNav();
+async function init(){
+  try{
+    const d=await api('GET','/api/deliveries');
+    $('delivList').innerHTML=d.deliveries.length?d.deliveries.map(del=>`
+      <div style="padding:12px 0;border-bottom:1px solid var(--border2)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700;font-size:.9rem">${del.supplier}</div>
+          ${statusBadge(del.status)}
+        </div>
+        <div style="color:var(--grey);font-size:.8rem;margin-top:3px">${del.fuel_type} · ${del.quantity.toLocaleString()}L</div>
+        <div style="color:var(--grey);font-size:.78rem">Scheduled: ${fmtDate(del.scheduled_date)}</div>
+      </div>`).join(''):'<div style="color:var(--grey);padding:10px 0">No deliveries scheduled</div>';
+  }catch{}
+}
+async function uploadManifest(){
+  const msg=$('delivMsg');msg.style.display='none';
+  const xml=$('xmlManifest').value.trim();if(!xml)return;
+  try{
+    const r=await fetch('/api/deliveries/upload',{method:'POST',headers:{Authorization:'Bearer '+getToken(),'Content-Type':'application/xml'},body:xml});
+    const d=await r.json();if(!r.ok)throw new Error(d.error);
+    msg.className='alert alert-green';
+    msg.innerHTML=`Manifest processed: ${d.parsed?.supplier||'Unknown'} · ${d.parsed?.fuel||'Unknown'} · ${d.parsed?.quantity||0}L`;
+    msg.style.display='block';init();
+  }catch(e){msg.className='alert alert-red';msg.textContent=e.message;msg.style.display='block';}
+}
+init();
+</script></body></html>

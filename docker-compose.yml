@@ -1,0 +1,24 @@
+name: acs-gas-station
+
+services:
+  acs-gas-station:
+    build: ./app
+    container_name: acs-gas-station
+    ports:
+      - "9005:3000"
+    volumes:
+      - acs-gas-station-data:/app/data
+      - acs-gas-station-uploads:/app/uploads
+    networks:
+      - acsnet
+    restart: unless-stopped
+
+volumes:
+  acs-gas-station-data:
+    name: acs-gas-station_data
+  acs-gas-station-uploads:
+    name: acs-gas-station_uploads
+
+networks:
+  acsnet:
+    driver: bridge
