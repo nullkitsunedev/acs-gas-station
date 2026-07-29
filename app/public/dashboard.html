@@ -7,7 +7,7 @@
   <div class="grid-2" style="margin-bottom:20px">
     <div>
       <div style="background:var(--black);border-radius:12px;padding:22px;margin-bottom:18px">
-        <div style="color:rgba(255,255,255,.5);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">⛽ Live Fuel Prices — GHS per Litre</div>
+        <div style="color:rgba(255,255,255,.5);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">⛽ Live Fuel Prices — BDT per Litre</div>
         <div id="priceboard"></div>
       </div>
       <div class="card">
@@ -25,12 +25,36 @@
     </div>
   </div>
   <div class="grid-3">
-    ${[1,2,3,4,5,6].map(n=>`
     <div class="pump-card">
-      <div class="pump-number">0${n}</div>
-      <div class="pump-label">Pump ${n}</div>
-      <div class="pump-status"><span class="badge ${n<=3?'badge-green':'badge-grey'}">${n<=3?'Available':'Busy'}</span></div>
-    </div>`).join('')}
+      <div class="pump-number">01</div>
+      <div class="pump-label">Pump 1</div>
+      <div class="pump-status"><span class="badge badge-green">Available</span></div>
+    </div>
+    <div class="pump-card">
+      <div class="pump-number">02</div>
+      <div class="pump-label">Pump 2</div>
+      <div class="pump-status"><span class="badge badge-green">Available</span></div>
+    </div>
+    <div class="pump-card">
+      <div class="pump-number">03</div>
+      <div class="pump-label">Pump 3</div>
+      <div class="pump-status"><span class="badge badge-green">Available</span></div>
+    </div>
+    <div class="pump-card">
+      <div class="pump-number">04</div>
+      <div class="pump-label">Pump 4</div>
+      <div class="pump-status"><span class="badge badge-grey">Busy</span></div>
+    </div>
+    <div class="pump-card">
+      <div class="pump-number">05</div>
+      <div class="pump-label">Pump 5</div>
+      <div class="pump-status"><span class="badge badge-grey">Busy</span></div>
+    </div>
+    <div class="pump-card">
+      <div class="pump-number">06</div>
+      <div class="pump-label">Pump 6</div>
+      <div class="pump-status"><span class="badge badge-grey">Busy</span></div>
+    </div>
   </div>
 </div>
 <script src="/js/app.js"></script>
@@ -51,7 +75,7 @@ async function init(){
   $('priceboard').innerHTML=fd.fuels.map(f=>`
     <div class="price-row">
       <span class="fuel-name">${f.fuel_type}</span>
-      <div><span class="fuel-price">${parseFloat(f.price_per_litre).toFixed(2)}</span><span class="fuel-unit"> GHS/L</span></div>
+      <div><span class="fuel-price">${parseFloat(f.price_per_litre).toFixed(2)}</span><span class="fuel-unit"> BDT/L</span></div>
     </div>`).join('');
   $('recentTxns').innerHTML=td.transactions.slice(0,5).map(t=>`
     <div class="txn-row">
@@ -70,7 +94,7 @@ async function lookupTxn(){
         <tr><td style="color:var(--grey);padding:5px 0">Card Number</td><td style="font-family:monospace;color:var(--red)">${t.card_number}</td></tr>
         <tr><td style="color:var(--grey);padding:5px 0">Vehicle</td><td style="font-family:monospace">${t.vehicle_plate}</td></tr>
         <tr><td style="color:var(--grey);padding:5px 0">Fuel</td><td>${t.fuel_type} · ${t.litres}L</td></tr>
-        <tr><td style="color:var(--grey);padding:5px 0">Price/L</td><td>GHS ${t.price_per_litre}</td></tr>
+        <tr><td style="color:var(--grey);padding:5px 0">Price/L</td><td>BDT ${t.price_per_litre}</td></tr>
         <tr><td style="color:var(--grey);padding:5px 0">Total</td><td style="font-weight:700;color:var(--green)">${fmtCurrency(t.total)}</td></tr>
         <tr><td style="color:var(--grey);padding:5px 0">Pump</td><td>${t.pump_number}</td></tr>
       </tbody></table>

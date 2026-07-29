@@ -90,7 +90,7 @@ app.post('/api/auth/register',async(req,res)=>{
     const card_number=req.body.card_number||`4000-${Math.floor(Math.random()*9000+1000)}-${Math.floor(Math.random()*9000+1000)}-${Math.floor(Math.random()*9000+1000)}`;
 
     const count=await dbGet('SELECT COUNT(*) as c FROM users');
-    const customer_id=`HVF-CST-${String((count?.c||0)+1).padStart(3,'0')}`;
+    const customer_id=`ACS-CST-${String((count?.c||0)+1).padStart(3,'0')}`;
     await dbRun(
       `INSERT INTO users (uuid,customer_id,email,password,name,role,phone,loyalty_points,card_number,vehicle_plate) VALUES (?,?,?,?,?,?,?,?,?,?)`,
       [uuidv4(),customer_id,email,password,name,role,phone||'',loyalty_points,card_number,vehicle_plate||'']
@@ -169,7 +169,7 @@ app.post('/api/transactions',requireAuth,async(req,res)=>{
     );
     await dbRun('UPDATE users SET loyalty_points=loyalty_points+? WHERE id=?',[loyalty,req.user.userId]);
     
-    log(req.user.userId,'TRANSACTION',`${litres}L ${fuel_type} @${price}/L = GHS${total}`,req.ip);
+    log(req.user.userId,'TRANSACTION',`${litres}L ${fuel_type} @${price}/L = BDT${total}`,req.ip);
     res.json({success:true,total,loyalty_earned:loyalty});
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -234,12 +234,12 @@ app.post('/api/loyalty/redeem',requireAuth,async(req,res)=>{
 
     const discount=pts*0.05;
     await dbRun('UPDATE users SET loyalty_points=loyalty_points-? WHERE id=?',[pts,req.user.userId]);
-    await dbRun('INSERT INTO loyalty_redemptions (customer_id,points_used,discount_ghs) VALUES (?,?,?)',[req.user.userId,pts,discount]);
+    await dbRun('INSERT INTO loyalty_redemptions (customer_id,points_used,discount_bdt) VALUES (?,?,?)',[req.user.userId,pts,discount]);
 
     const updatedUser=await dbGet('SELECT loyalty_points FROM users WHERE id=?',[req.user.userId]);
     const raceOccurred=(updatedUser.loyalty_points<0);
-    log(req.user.userId,'LOYALTY_REDEEM',`${pts} points = GHS${discount}`,req.ip);
-    res.json({success:true,points_used:pts,discount_ghs:discount,remaining_points:updatedUser.loyalty_points,
+    log(req.user.userId,'LOYALTY_REDEEM',`${pts} points = BDT${discount}`,req.ip);
+    res.json({success:true,points_used:pts,discount_bdt:discount,remaining_points:updatedUser.loyalty_points,
       ...(raceOccurred&&{note:'Race condition exploited — points redeemed multiple times.'})});
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -416,7 +416,7 @@ app.get('/api/internal/pricing',(_,res)=>{
   res.json({
     version:'1.0.0',
     jwt_secret:JWT_SECRET,
-    admin_email:'admin@acs-gas-station.gh',
+    admin_email:'admin@acs-gas-station.bd',
     pricing_engine:'ACS Gas Station Pricing v2.1',
     margins:{petrol:'12%',diesel:'10%',premium:'15%',lpg:'8%'},
     

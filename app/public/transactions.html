@@ -15,13 +15,13 @@
           <select class="form-control" id="pump"><option value="1">Pump 1</option><option value="2">Pump 2</option><option value="3">Pump 3</option></select>
         </div>
       </div>
-      <div class="form-group"><label>Price per Litre (GHS)</label><input class="form-control" id="pricePerLitre" type="number" step="0.01" placeholder="Auto-filled"></div>
+      <div class="form-group"><label>Price per Litre (BDT)</label><input class="form-control" id="pricePerLitre" type="number" step="0.01" placeholder="Auto-filled"></div>
       <div class="form-group"><label>Payment Method</label>
         <select class="form-control" id="payMethod"><option value="card">Card</option><option value="cash">Cash</option><option value="mobile">Mobile Money</option></select>
       </div>
       <div style="padding:12px;background:var(--bg);border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between">
         <span style="color:var(--grey)">Estimated Total</span>
-        <span id="totalEst" style="font-weight:700;color:var(--green);font-family:monospace">GHS 0.00</span>
+        <span id="totalEst" style="font-weight:700;color:var(--green);font-family:monospace">BDT 0.00</span>
       </div>
       <div id="txnMsg" class="alert" style="display:none"></div>
       <button class="btn btn-green btn-full" onclick="newTxn()">Purchase Fuel</button>
@@ -40,7 +40,7 @@ let fuels=[];
 async function init(){
   const[fd,td]=await Promise.all([api('GET','/api/fuel'),api('GET','/api/transactions/my')]);
   fuels=fd.fuels;
-  $('fuelType').innerHTML=fuels.map(f=>`<option value="${f.fuel_type}" data-price="${f.price_per_litre}">${f.fuel_type} — GHS${f.price_per_litre}/L</option>`).join('');
+  $('fuelType').innerHTML=fuels.map(f=>`<option value="${f.fuel_type}" data-price="${f.price_per_litre}">${f.fuel_type} — BDT${f.price_per_litre}/L</option>`).join('');
   updatePrice();
   $('txnList').innerHTML=td.transactions.length?td.transactions.map(t=>`
     <div class="txn-row">
@@ -49,7 +49,7 @@ async function init(){
     </div>`).join(''):'<div style="color:var(--grey);padding:10px 0">No transactions yet</div>';
 }
 function updatePrice(){const opt=$('fuelType').selectedOptions[0];if(opt){$('pricePerLitre').value=opt.dataset.price;calcTotal();}}
-function calcTotal(){const l=parseFloat($('litres').value)||0;const p=parseFloat($('pricePerLitre').value)||0;$('totalEst').textContent='GHS '+(l*p).toFixed(2);}
+function calcTotal(){const l=parseFloat($('litres').value)||0;const p=parseFloat($('pricePerLitre').value)||0;$('totalEst').textContent='BDT '+(l*p).toFixed(2);}
 async function newTxn(){
   const msg=$('txnMsg');msg.style.display='none';
   try{

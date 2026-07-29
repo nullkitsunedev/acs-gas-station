@@ -25,7 +25,7 @@ async function init(){
       <tr><td style="color:var(--grey);padding:8px 0">Loyalty Card</td><td style="font-family:monospace;color:var(--red)">${user.card_number}</td></tr>
       <tr><td style="color:var(--grey);padding:8px 0">Vehicle Plate</td><td style="font-family:monospace">${user.vehicle_plate||'—'}</td></tr>
       <tr><td style="color:var(--grey);padding:8px 0">Phone</td><td>${user.phone||'—'}</td></tr>
-      <tr><td style="color:var(--grey);padding:8px 0">Station</td><td>${user.station_id||'HVF-GH-001'}</td></tr>
+      <tr><td style="color:var(--grey);padding:8px 0">Station</td><td>${user.station_id||'ACS-GH-001'}</td></tr>
       <tr><td style="color:var(--grey);padding:8px 0">Member Since</td><td>${fmtDate(user.created_at)}</td></tr>
     </tbody></table>`;
 }

@@ -56,6 +56,6 @@ async function renderNav(){
 function statusBadge(s){const m={active:'badge-green',completed:'badge-grey',scheduled:'badge-green',cancelled:'badge-red',card:'badge-black',cash:'badge-orange'};return`<span class="badge ${m[s]||'badge-grey'}">${s}</span>`;}
 function fmtDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
 function fmtDateTime(d){if(!d)return'—';return new Date(d).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
-function fmtCurrency(n){return'GHS '+parseFloat(n||0).toFixed(2);}
+function fmtCurrency(n){return'BDT '+parseFloat(n||0).toFixed(2);}
 function toast(msg,type='green'){const d=document.createElement('div');d.className=`alert alert-${type}`;d.style.cssText='position:fixed;top:74px;right:20px;z-index:9999;max-width:360px;box-shadow:0 4px 20px rgba(0,0,0,.2)';d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),4000);}
 function $(id){return document.getElementById(id);}

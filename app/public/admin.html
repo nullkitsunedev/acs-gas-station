@@ -45,7 +45,7 @@ async function init(){
   try{
     const d=await api('GET','/api/admin/stats');
     $('sC').textContent=d.customers;$('sT').textContent=d.transactions;
-    $('sR').textContent='GHS '+parseFloat(d.revenue).toLocaleString();$('sF').textContent=d.inventory.length;
+    $('sR').textContent='BDT '+parseFloat(d.revenue).toLocaleString();$('sF').textContent=d.inventory.length;
     
   }catch(e){$('adminFlag').innerHTML=`<div class="alert alert-red">Access denied: ${e.message}<br>Forge a JWT with role:"admin" using the secret discovered via SSRF.</div>`;}
   loadUsers();

@@ -24,7 +24,7 @@
       <div class="card-header"><h3>🌐 External Price Feed</h3></div>
       <p style="color:var(--grey);font-size:.84rem;margin-bottom:14px">Connect to an external fuel pricing API to sync current market rates.</p>
       <div class="form-group"><label>Price Feed URL</label>
-        <input class="form-control" id="feedUrl" placeholder="https://fuelprices.api.gh/v1/current">
+        <input class="form-control" id="feedUrl" placeholder="https://fuelprices.api.bd/v1/current">
       </div>
       <button class="btn btn-black" onclick="fetchPriceFeed()">Fetch Price Feed</button>
       <div id="feedResult" style="margin-top:14px"></div>
@@ -52,7 +52,7 @@ async function generateReport(){
   box.innerHTML='<div style="color:var(--grey)">Generating...</div>';
   try{
     const d=await api('GET',`/api/reports/generate?template=${encodeURIComponent(template)}`);
-    const hasFlag=d.hive_flag;
+    const hasFlag=d.acs_flag;
     box.innerHTML=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px">
       <div style="font-weight:700;margin-bottom:10px;color:var(--green)">📄 ${template}</div>
       <pre style="font-size:.76rem;overflow:auto;max-height:280px;white-space:pre-wrap;color:var(--dark)">${d.content||''}</pre>
