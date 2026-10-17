@@ -12,7 +12,7 @@ This lab is fully containerized using Docker. You do **not** need to download an
 Open your terminal (or Command Prompt/PowerShell) and run the following command:
 
 ```bash
-docker run -d --name acs-gas-station -p 8090:3000 ghcr.io/s4mc71/acs-gas-station:latest
+docker run -d --name acs-gas-station -p 8090:3000 ghcr.io/thesamubin/acs-gas-station:latest
 ```
 *Note: The first time you run this, it will take a few minutes to download the files from the internet.*
 
